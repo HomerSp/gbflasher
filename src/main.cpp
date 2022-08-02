@@ -72,6 +72,6 @@ int main(int argc, char** argv)
             << "Bootloader version " << newAppInfo->bootloaderVersion() << "\n";
     }
 
-    //flasher.switchMode(Flasher::MODE_REGULAR);
+    flasher.switchMode(Flasher::MODE_REGULAR);
     return 0;
 }
