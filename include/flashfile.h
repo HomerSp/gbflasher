@@ -16,6 +16,7 @@ public:
         bool encrypted;
         uint8_t padding;
 
+        uint32_t length() const { return data.size() - 2 - (encrypted ? 2 : 0); }
         std::vector<uint8_t> encoded() const;
     };
 

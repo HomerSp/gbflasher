@@ -60,9 +60,9 @@ FlashFile::FlashFile(std::ifstream stream, const DeviceInfo& deviceInfo)
 
         cmd.addr |= baseAddr;
         cmd.addr &= 0x1FFFFFFF;
-        //printf("FlashFile cmd %02X, addr %08X, len %08X\n", cmd.cmd, cmd.addr, cmd.data.size());
 
-        auto memType = deviceInfo.memoryType(cmd.addr);
+        auto memType = deviceInfo.memoryType(cmd.addr, cmd.data.size());
+        //printf("FlashFile cmd %02X, addr %08X, len %08X, type %d\n", cmd.cmd, cmd.addr, cmd.data.size(), memType);
         if (memType == MemoryInfo::NONE) {
             return;
         }

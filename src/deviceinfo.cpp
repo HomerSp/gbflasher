@@ -32,13 +32,13 @@ uint32_t DeviceInfo::address(MemoryInfo::Type type) const
     return 0xFFFFFFFFU;
 }
 
-MemoryInfo::Type DeviceInfo::memoryType(uint32_t addr) const
+MemoryInfo::Type DeviceInfo::memoryType(uint32_t addr, uint32_t size) const
 {
     MemoryInfo::Type ret = MemoryInfo::NONE;
     uint32_t maxLen = 0;
     for (const auto& p: mMemInfo) {
         // Find the shortest matching block
-        if (addr >= p.start && addr <= p.start + p.length && (maxLen == 0 || p.length <= maxLen)) {
+        if (addr >= p.start && addr + size <= p.start + p.length && (maxLen == 0 || p.length <= maxLen)) {
             //printf("DeviceInfo::memoryType %08X vs %08X - %08X, type %d\n", addr, p.start, p.start + p.length, p.type);
             ret = p.type;
             maxLen = p.length;

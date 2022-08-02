@@ -65,21 +65,21 @@ bool Flasher::flashMemory(const FlashFile& file, const DeviceInfo& info, MemoryI
 {
     auto bootDev = HID::find(GB_VID, GB_BOOT_PID);
     if (!!bootDev && bootDev->open()) {
-        uint32_t lastAddress = 0xFFFFFFFFU;
+        uint32_t address = 0xFFFFFFFFU;
         for (const auto& p: file.cmds(memType)) {
             const auto& f = p.second;
-            if (info.memoryType(f.addr) != memType) {
-                continue;
+            if (address == 0xFFFFFFFFU) {
+                address = f.addr;
             }
 
-            if (lastAddress != 0xFFFFFFFFU && f.addr != lastAddress) {
+            if (address != f.addr) {
                 auto ret = send(bootDev, CMD_WRITE_COMPLETE);
                 if (ret.empty()) {
                     printf("Program complete failed!\n");
                     return false;
                 }
 
-                lastAddress = 0xFFFFFFFFU;
+                address = f.addr;
             }
 
             auto res = sendResult(bootDev, f.encrypted ? CMD_WRITE_CIPHERED : CMD_WRITE, f.encoded());
@@ -88,10 +88,10 @@ bool Flasher::flashMemory(const FlashFile& file, const DeviceInfo& info, MemoryI
                 return false;
             }
 
-            lastAddress = res.address;
+            address += f.length();
         }
 
-        if (lastAddress != 0xFFFFFFFFU) {
+        if (address != 0xFFFFFFFFU) {
             auto ret = send(bootDev, CMD_WRITE_COMPLETE);
             if (ret.empty()) {
                 printf("Program complete failed!\n");
@@ -136,10 +136,6 @@ bool Flasher::verifyMemory(const FlashFile& file, const DeviceInfo& info, Memory
     if (!!bootDev && bootDev->open()) {
         for (const auto& p: file.cmds(memType)) {
             const auto& f = p.second;
-            if (info.memoryType(f.addr) != memType) {
-                continue;
-            }
-
             auto res = sendResult(bootDev, f.encrypted ? CMD_VERIFY_CIPHERED : CMD_VERIFY, f.encoded());
             if (res.result < 0) {
                 printf("Failed verifying address %08X, res %d\n", f.addr, res.result);

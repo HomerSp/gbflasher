@@ -9,7 +9,7 @@ public:
     DeviceInfo(const std::vector<uint8_t>& data);
 
     uint32_t address(MemoryInfo::Type type) const;
-    MemoryInfo::Type memoryType(uint32_t addr) const;
+    MemoryInfo::Type memoryType(uint32_t addr, uint32_t size) const;
 
     bool validateFlashFile(const FlashFile& file) const;
 
