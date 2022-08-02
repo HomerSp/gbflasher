@@ -84,5 +84,5 @@ FlashFile::FlashFile(std::ifstream stream, const DeviceInfo& deviceInfo)
         mCommands.erase(MemoryInfo::APPINFO);
     }
 
-    mValid = !mCommands.empty();
+    mValid = !!mAppInfo && !mCommands.empty();
 }

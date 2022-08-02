@@ -26,6 +26,7 @@ set(HEADERS
     include/flashfile.h
     include/hid.h
     include/main.h
+    include/memoryinfo.h
     include/timer.h
     include/utils/hex.h
 )
@@ -38,6 +39,7 @@ set(SOURCES
     src/flashfile.cpp
     src/hid.cpp
     src/main.cpp
+    src/memoryinfo.cpp
     src/timer.cpp
     src/utils/hex.cpp
 )

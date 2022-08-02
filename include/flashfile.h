@@ -26,6 +26,7 @@ public:
 
     FlashFile(std::ifstream stream, const DeviceInfo& deviceInfo);
 
+    bool has(MemoryInfo::Type type) const { return mCommands.find(type) != mCommands.end(); }
     const std::map<uint32_t, Command>& cmds(MemoryInfo::Type type) const { return mCommands.at(type); }
 
     std::shared_ptr<AppInfo> appInfo() const { return mAppInfo; }

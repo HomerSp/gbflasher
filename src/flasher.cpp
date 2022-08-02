@@ -50,7 +50,15 @@ bool Flasher::erase()
 
 bool Flasher::flash(const FlashFile& file, const DeviceInfo& info)
 {
+    // Only supports APPLICATION
     return flashMemory(file, info, MemoryInfo::APPLICATION);
+    /*return MemoryInfo::ALL([&](auto t) {
+        if (file.has(t) && !flashMemory(file, info, t)) {
+            return false;
+        }
+
+        return true;
+    });*/
 }
 
 bool Flasher::flashMemory(const FlashFile& file, const DeviceInfo& info, MemoryInfo::Type memType)
@@ -113,7 +121,13 @@ bool Flasher::setAppInfo(const FlashFile& file, const DeviceInfo& deviceInfo, co
 
 bool Flasher::verify(const FlashFile& file, const DeviceInfo& info)
 {
-    return verifyMemory(file, info, MemoryInfo::APPLICATION);
+    return MemoryInfo::ALL([&](auto t) {
+        if (file.has(t) && !verifyMemory(file, info, t)) {
+            return false;
+        }
+
+        return true;
+    });
 }
 
 bool Flasher::verifyMemory(const FlashFile& file, const DeviceInfo& info, MemoryInfo::Type memType)
