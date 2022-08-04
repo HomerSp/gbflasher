@@ -37,6 +37,9 @@ public:
 
     operator bool() const { return mValid; }
 
+protected:
+    bool verifyChecksum(const std::vector<uint8_t>& data) const;
+
 private:
     bool mValid = false;
     std::map<MemoryInfo::Type, std::map<uint32_t, Command>> mCommands;

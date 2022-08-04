@@ -25,7 +25,13 @@ FlashFile::FlashFile(std::ifstream stream, const DeviceInfo& deviceInfo)
             return;
         }
 
-        ext::BufferStream lineStream(utils::Hex::fromString(line.substr(1)));
+        auto data = utils::Hex::fromString(line.substr(1));
+        if (!verifyChecksum(data)) {
+            Logger::error<FlashFile>("FlashFile") << "Found invalid checksum at line" << line;
+            return;
+        }
+
+        ext::BufferStream lineStream(data);
         if (lineStream.eof()) {
             return;
         }
@@ -86,4 +92,25 @@ FlashFile::FlashFile(std::ifstream stream, const DeviceInfo& deviceInfo)
     }
 
     mValid = !!mAppInfo && !mCommands.empty();
+}
+
+bool FlashFile::verifyChecksum(const std::vector<uint8_t>& data) const
+{
+    if (data.size() < 2) {
+        return false;
+    }
+
+    auto found = data.at(data.size() - 1);
+    uint8_t checksum = 0;
+    for (uint32_t i = 0; i < data.size() - 1; ++i) {
+        checksum += data.at(i);
+    }
+
+    checksum = (~checksum + 1) & 0xFFU;
+    if (checksum != found) {
+        Logger::error<FlashFile>("verifyChecksum") ("calculated %02X, vs %02X", checksum, found);
+        return false;
+    }
+
+    return true;
 }
