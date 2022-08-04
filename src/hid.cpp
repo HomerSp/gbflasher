@@ -37,7 +37,7 @@ std::vector<uint8_t> HID::Device::read()
         return {};
     }
 
-    std::vector<uint8_t> ret(64, 0x0U);
+    std::vector<uint8_t> ret(65, 0x0U);
     auto read = hid_read_timeout(mDevice, &ret.at(0), ret.size(), 10000);
     if (read <= 0) {
         printf("hid_read_timeout %d\n", read);
@@ -45,7 +45,7 @@ std::vector<uint8_t> HID::Device::read()
     }
 
     ret.resize(read);
-    printf("HID::Device::read %s\n", utils::Hex::toString(ret).c_str());
+    //printf("HID::Device::read %s\n", utils::Hex::toString(ret).c_str());
     return ret;
 }
 
@@ -61,13 +61,13 @@ bool HID::Device::write(uint8_t report, const std::vector<uint8_t>& data)
         return false;
     }
 
-    std::vector<uint8_t> d(64, 0x00U);
+    std::vector<uint8_t> d(65, 0x00U);
     d[0] = report;
     if (!data.empty()) {
         std::copy(data.begin(), data.end(), d.begin() + 1);
     }
 
-    printf("HID::Device::write %s\n", utils::Hex::toString(d).c_str());
+    //printf("HID::Device::write %s\n", utils::Hex::toString(d).c_str());
     return hid_write(mDevice, d.data(), d.size()) == d.size();
 }
 

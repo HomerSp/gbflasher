@@ -16,7 +16,8 @@ public:
         void close();
 
         std::vector<uint8_t> read();
-        bool write(uint8_t report, const std::vector<uint8_t>& data = {});
+        bool write(const std::vector<uint8_t>& data) { return write(0x00U, data); }
+        bool write(uint8_t report, const std::vector<uint8_t>& data);
 
     private:
         std::string mPath;
