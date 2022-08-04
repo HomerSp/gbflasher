@@ -81,7 +81,7 @@ std::shared_ptr<HID::Device> HID::find(uint16_t vid, uint16_t pid, int interface
     std::string path;
     while (cur_dev != nullptr) {
         if (cur_dev->vendor_id == vid && cur_dev->product_id == pid && (interfaceNum == -1 || cur_dev->interface_number == interfaceNum)) {
-            Logger::verbose<HID>("find") ("Found %04X:%04X, interface %d path %s", cur_dev->vendor_id, cur_dev->product_id, cur_dev->interface_number, cur_dev->path);
+            Logger::verbose<HID>("find") ("Found %04X:%04X (interface %d), path %s", cur_dev->vendor_id, cur_dev->product_id, cur_dev->interface_number, cur_dev->path);
             if (!path.empty()) {
                 Logger::warning<HID::Device>("find") << "Multiple devices match, using first";
                 break;
