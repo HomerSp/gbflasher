@@ -31,11 +31,11 @@ public:
     BufferStream& fill(uint64_t count, uint8_t c = 0x00U) { return bitFill(count * 8, c); }
 
     bool readBool();
-    uint8_t readByte();
-    uint16_t readWord();
-    uint32_t readSword();
-    uint32_t readDword();
-    uint64_t readQword();
+    uint8_t readUInt8();
+    uint16_t readUInt16();
+    uint32_t readUInt24();
+    uint32_t readUInt32();
+    uint64_t readUInt64();
     std::vector<uint8_t> readBytes(uint32_t count = -1);
     std::string readString(uint32_t len = -1, bool skipNull = true);
 

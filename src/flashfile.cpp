@@ -37,11 +37,11 @@ FlashFile::FlashFile(std::ifstream stream, const DeviceInfo& deviceInfo)
         }
 
         FlashFile::Command cmd({0, 0, {}, false, 0});
-        auto len = lineStream.readByte();
-        cmd.address = lineStream.bitRead(16);
-        cmd.cmd = lineStream.readByte();
+        auto len = lineStream.readUInt8();
+        cmd.address = lineStream.bitRead(16);   // Little endian
+        cmd.cmd = lineStream.readUInt8();
         cmd.data = lineStream.readBytes(len);
-        auto chk = lineStream.readByte();
+        auto chk = lineStream.readUInt8();
 
         switch (cmd.cmd) {
             case 0x00U: {

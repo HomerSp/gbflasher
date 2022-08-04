@@ -37,30 +37,30 @@ BufferStream& BufferStream::pad(uint64_t size, uint8_t c)
 
 bool BufferStream::readBool()
 {
-    return readByte() != 0x00;
+    return bitRead(8) != 0x00U;
 }
 
-uint8_t BufferStream::readByte()
+uint8_t BufferStream::readUInt8()
 {
     return bitRead(8);
 }
 
-uint16_t BufferStream::readWord()
+uint16_t BufferStream::readUInt16()
 {
     return bitRead(8) | (bitRead(8) << 8U);
 }
 
-uint32_t BufferStream::readSword()
+uint32_t BufferStream::readUInt24()
 {
     return bitRead(8) | (bitRead(8) << 8U) | (bitRead(8) << 16U);
 }
 
-uint32_t BufferStream::readDword()
+uint32_t BufferStream::readUInt32()
 {
     return bitRead(8) | (bitRead(8) << 8U) | (bitRead(8) << 16U) | (bitRead(8) << 24U);
 }
 
-uint64_t BufferStream::readQword()
+uint64_t BufferStream::readUInt64()
 {
     return bitRead(8) | (bitRead(8) << 8U) | (bitRead(8) << 16U) | (bitRead(8) << 24U) | (bitRead(8) << 32U) | (bitRead(8) << 40U) | (bitRead(8) << 48U) | (bitRead(8) << 56U);
 }

@@ -5,23 +5,23 @@
 AppInfo::AppInfo(const std::vector<uint8_t>& data)
 {
     ext::BufferStream stream(data);
-    mSignature = stream.readQword();
-    mVersion = stream.readDword();
-    mLength = stream.readDword();
+    mSignature = stream.readUInt64();
+    mVersion = stream.readUInt32();
+    mLength = stream.readUInt32();
 
-    auto appVerLen = stream.readByte();
-    auto appDescLen = stream.readByte();
-    auto bootVerLen = stream.readByte();
-    auto bootDescLen = stream.readByte();
+    auto appVerLen = stream.readUInt8();
+    auto appDescLen = stream.readUInt8();
+    auto bootVerLen = stream.readUInt8();
+    auto bootDescLen = stream.readUInt8();
     mAppVersion = {appVerLen, stream.readString(appVerLen)};
     mAppDescription = {appDescLen, stream.readString(appDescLen)};
     mBootloaderVersion = {bootVerLen, stream.readString(bootVerLen)};
     mBootloaderDescription = {bootDescLen, stream.readString(bootDescLen)};
 
-    auto numPersistBlocks = stream.readDword();
+    auto numPersistBlocks = stream.readUInt32();
     for (uint32_t i = 0; i < numPersistBlocks; ++i) {
-        auto address = stream.readDword();
-        auto len = stream.readDword();
+        auto address = stream.readUInt32();
+        auto len = stream.readUInt32();
         mPersistentMemory.emplace_back(MemoryInfo::PERSISTENT, address, len);
     }
 }

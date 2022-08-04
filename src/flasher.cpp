@@ -156,10 +156,11 @@ bool Flasher::switchMode(uint8_t mode)
         // Check if we're already in boot mode
         auto bootDev = HID::find(GB_VID, GB_BOOT_PID);
         if (!!bootDev) {
+            Logger::verbose<Flasher>("switchMode") << "Already in boot mode";
             return true;
         }
 
-        Logger::info<Flasher>("switchMode") << "switching to boot mode";
+        Logger::info<Flasher>("switchMode") << "Switching to boot mode";
         auto dev = HID::find(GB_VID, GB_PID, 1);
         if (!!dev && dev->open()) {
             // Don't check the result here as it's expected to fail
@@ -169,10 +170,11 @@ bool Flasher::switchMode(uint8_t mode)
     } else if (mode == MODE_REGULAR) {
         auto dev = HID::find(GB_VID, GB_PID, 1);
         if (!!dev) {
+            Logger::verbose<Flasher>("switchMode") << "Already in regular mode";
             return true;
         }
 
-        Logger::info<Flasher>("switchMode") << "switching to regular mode";
+        Logger::info<Flasher>("switchMode") << "Switching to regular mode";
         auto bootDev = HID::find(GB_VID, GB_BOOT_PID);
         if (!!bootDev && bootDev->open()) {
             bootDev->write({CMD_RESET});
@@ -225,7 +227,7 @@ std::vector<uint8_t> Flasher::send(const std::shared_ptr<HID::Device>& dev, uint
         return {};
     }
 
-    if (stream.readByte() != cmd) {
+    if (stream.readUInt8() != cmd) {
         return {};
     }
 
@@ -239,7 +241,7 @@ Flasher::AddressResult Flasher::sendResult(const std::shared_ptr<HID::Device>& d
         return {0U, -1};
     }
 
-    return {stream.readDword(), static_cast<int32_t>(stream.readDword())};
+    return {stream.readUInt32(), static_cast<int32_t>(stream.readUInt32())};
 }
 
 std::vector<uint8_t> Flasher::readSegmented(const std::shared_ptr<HID::Device>& dev, uint8_t cmd, std::vector<uint8_t> data)
@@ -252,19 +254,19 @@ std::vector<uint8_t> Flasher::readSegmented(const std::shared_ptr<HID::Device>& 
             break;
         }
 
-        auto addr = stream.readDword();
+        auto addr = stream.readUInt32();
         if (addr == 0x00U || addr == 0xFFFFFFFFU) {
             return {};
         }
 
         if (readSize == 0) {
-            totalSize = stream.readWord();
+            totalSize = stream.readUInt16();
         } else {
             stream.skip(2);
         }
 
-        auto blkSize = stream.readByte();
-        auto blkIndex = stream.readByte();
+        auto blkSize = stream.readUInt8();
+        auto blkIndex = stream.readUInt8();
 
         blockData[blkIndex] = stream.readBytes(blkSize);
         readSize += blkSize;

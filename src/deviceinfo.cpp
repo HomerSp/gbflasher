@@ -7,16 +7,16 @@
 DeviceInfo::DeviceInfo(const std::vector<uint8_t>& data)
 {
     ext::BufferStream stream(data);
-    mFieldSize = stream.readByte();
-    mBytesPerAddress = stream.readByte();
+    mFieldSize = stream.readUInt8();
+    mBytesPerAddress = stream.readUInt8();
     for (uint32_t i = 0; i < 6; ++i) {
-        MemoryInfo::Type type = static_cast<MemoryInfo::Type>(stream.readByte());
+        MemoryInfo::Type type = static_cast<MemoryInfo::Type>(stream.readUInt8());
         if (type == MemoryInfo::END) {
             break;
         }
 
-        uint32_t addr = stream.readDword();
-        uint32_t len = stream.readDword();
+        uint32_t addr = stream.readUInt32();
+        uint32_t len = stream.readUInt32();
         Logger::verbose<DeviceInfo>("DeviceInfo")("Memory type %02X, address %08X, length %08X", type, addr, len);
         mMemInfo.emplace_back(type, addr, len);
     }
