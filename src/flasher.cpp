@@ -41,7 +41,7 @@ bool Flasher::erase()
     if (!!bootDev && bootDev->open()) {
         auto data = send(bootDev, CMD_ERASE);
         if (!data.empty()) {
-            return true;
+            return !send(bootDev, CMD_DEVICEINFO).empty();
         }
     }
 
@@ -161,7 +161,7 @@ bool Flasher::switchMode(uint8_t mode)
         auto dev = HID::find(GB_VID, GB_PID, 1);
         if (!!dev && dev->open()) {
             // Don't check the result here as it's expected to fail
-            dev->write(CMD_BOOT, {PARAM_BOOTLOADER});
+            dev->write(REPORT_BOOT, {CMD_BOOTLOADER});
             return waitMode(mode);
         }
     } else if (mode == MODE_REGULAR) {
@@ -172,7 +172,7 @@ bool Flasher::switchMode(uint8_t mode)
 
         auto bootDev = HID::find(GB_VID, GB_BOOT_PID);
         if (!!bootDev && bootDev->open()) {
-            bootDev->write(CMD_RESET);
+            bootDev->write({CMD_RESET});
             return waitMode(mode);
         }
     }
@@ -180,9 +180,38 @@ bool Flasher::switchMode(uint8_t mode)
     return false;
 }
 
+std::vector<uint8_t> Flasher::readData(uint32_t address, uint32_t size)
+{
+    auto bootDev = HID::find(GB_VID, GB_BOOT_PID);
+    if (!!bootDev && bootDev->open()) {
+        std::vector<uint8_t> ret;
+        for (uint32_t offset = 0; offset < size; ++offset) {
+            for (uint8_t i = 0xFFU; i >= 0x00U; --i) {
+                ext::BufferStream stream;
+                stream.appendDword(address + offset);
+                stream.appendDword(0x1U);
+                stream.append(i);
+
+                auto res = sendResult(bootDev, CMD_VERIFY, stream.data());
+                if (res.result >= 0) {
+                    ret.emplace_back(i);
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    return {};
+}
+
 std::vector<uint8_t> Flasher::send(const std::shared_ptr<HID::Device>& dev, uint8_t cmd, std::vector<uint8_t> data)
 {
-    if (!dev->write(cmd, data)) {
+    std::vector<uint8_t> write;
+    write.emplace_back(cmd);
+    std::copy(data.begin(), data.end(), std::back_inserter(write));
+    if (!dev->write(write)) {
         printf("Flasher::send failed writing data\n");
         return {};
     }

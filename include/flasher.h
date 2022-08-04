@@ -31,6 +31,8 @@ public:
 
     bool switchMode(uint8_t mode);
 
+    std::vector<uint8_t> readData(uint32_t address, uint32_t size);
+
 private:
     bool flashMemory(const FlashFile& file, const DeviceInfo& info, MemoryInfo::Type memType);
     bool verifyMemory(const FlashFile& file, const DeviceInfo& info, MemoryInfo::Type memType);
@@ -53,7 +55,7 @@ private:
     static constexpr uint8_t REPORT_NORMAL = 0x00U;
 
     static constexpr uint8_t CMD_DEVICEINFO = 0x02U;
-    static constexpr uint8_t CMD_BOOT = 0x03U;
+    static constexpr uint8_t CMD_CONFIG_UNLOCK = 0x03U;
     static constexpr uint8_t CMD_ERASE = 0x04U;
     static constexpr uint8_t CMD_WRITE = 0x05U;
     static constexpr uint8_t CMD_WRITE_COMPLETE = 0x06U;
@@ -64,7 +66,7 @@ private:
     static constexpr uint8_t CMD_SET_APPINFO = 0x10U;
     static constexpr uint8_t CMD_VERIFY = 0x11U;
     static constexpr uint8_t CMD_VERIFY_CIPHERED = 0x12U;
+    static constexpr uint8_t CMD_BOOTLOADER = 0xB3U;
 
-    static constexpr uint8_t PARAM_BOOTLOADER = 0xB3U;
-
+    static constexpr uint8_t REPORT_BOOT = 0x03U;
 };
