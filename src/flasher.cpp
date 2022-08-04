@@ -159,6 +159,7 @@ bool Flasher::switchMode(uint8_t mode)
             return true;
         }
 
+        Logger::info<Flasher>("switchMode") << "switching to boot mode";
         auto dev = HID::find(GB_VID, GB_PID, 1);
         if (!!dev && dev->open()) {
             // Don't check the result here as it's expected to fail
@@ -171,6 +172,7 @@ bool Flasher::switchMode(uint8_t mode)
             return true;
         }
 
+        Logger::info<Flasher>("switchMode") << "switching to regular mode";
         auto bootDev = HID::find(GB_VID, GB_BOOT_PID);
         if (!!bootDev && bootDev->open()) {
             bootDev->write({CMD_RESET});
@@ -317,5 +319,6 @@ bool Flasher::waitMode(uint8_t mode)
         std::this_thread::sleep_for(10ms);
     } while (!timeout.expired());
 
+    Logger::error<Flasher>("waitMode") << "waiting for" << (mode == MODE_BOOT ? "boot" : "regular") << "mode failed";
     return false;
 }

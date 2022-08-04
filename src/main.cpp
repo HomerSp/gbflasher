@@ -30,7 +30,8 @@ int main(int argc, char** argv)
     });
 
     bool noReset = false;
-    std::vector<std::string> cmds;
+    std::string cmd;
+    std::vector<std::string> args;
 
     for (int i = 1; i < argc; ++i) {
         std::string a = argv[i];
@@ -47,16 +48,19 @@ int main(int argc, char** argv)
                 return showUsage();
             }
         } else {
-            cmds.push_back(a);
+            if (cmd.empty()) {
+                cmd = a;
+            } else {
+                args.push_back(a);
+            }
         }
     }
 
-    if (cmds.empty()) {
+    if (cmd.empty()) {
         return showUsage();
     }
 
     Flasher flasher;
-    Logger::info("main") << "Switching to boot mode";
     if (!flasher.switchMode(Flasher::MODE_BOOT)) {
         Logger::error("main") << "Could not switch to boot mode";
         return -1;
@@ -69,7 +73,7 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    if (cmds.at(0) == "info") {
+    if (cmd == "info") {
         auto info = deviceInfo->memInfo();
         Logger::info("main") << "Device memory:";
         for (const auto& p: info) {
@@ -80,12 +84,12 @@ int main(int argc, char** argv)
         if (!!appInfo) {
             Logger::info("main") << "Device app info:" << "App version" << appInfo->appVersion() << ", Bootloader version" << appInfo->bootloaderVersion();
         }
-    } else if (cmds.at(0) == "flash") {
-        if (cmds.size() < 2) {
+    } else if (cmd == "flash") {
+        if (args.empty()) {
             return showUsage();
         }
 
-        FlashFile flashFile(cmds.at(1), *deviceInfo);
+        FlashFile flashFile(args.at(0), *deviceInfo);
         if (!flashFile) {
             Logger::error("main") << "Failed parsing firmware file";
             return -1;
@@ -129,9 +133,9 @@ int main(int argc, char** argv)
         if (!noReset) {
             flasher.switchMode(Flasher::MODE_REGULAR);
         }
-    } else if (cmds.at(0) == "reset") {
+    } else if (cmd == "reset") {
         flasher.switchMode(Flasher::MODE_REGULAR);
-    } else if (cmds.at(0) == "erase") {
+    } else if (cmd == "erase") {
         flasher.erase();
     } else {
         return showUsage();

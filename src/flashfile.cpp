@@ -101,14 +101,14 @@ bool FlashFile::verifyChecksum(const std::vector<uint8_t>& data) const
     }
 
     auto found = data.at(data.size() - 1);
-    uint8_t checksum = 0;
+    uint8_t calculated = 0;
     for (uint32_t i = 0; i < data.size() - 1; ++i) {
-        checksum += data.at(i);
+        calculated += data.at(i);
     }
 
-    checksum = (~checksum + 1) & 0xFFU;
-    if (checksum != found) {
-        Logger::error<FlashFile>("verifyChecksum") ("calculated %02X, vs %02X", checksum, found);
+    calculated = (~calculated + 1) & 0xFFU;
+    if (calculated != found) {
+        Logger::error<FlashFile>("verifyChecksum") ("failed (calculated %02X, vs expected %02X)", calculated, found);
         return false;
     }
 
