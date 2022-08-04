@@ -312,7 +312,7 @@ bool Flasher::waitMode(uint8_t mode)
     auto timeout = ext::Timer::sec(10);
     do {
         // Wait for the boot device to become available
-        auto dev = HID::find(GB_VID, (mode == MODE_BOOT) ? GB_BOOT_PID : GB_PID);
+        auto dev = HID::find(GB_VID, (mode == MODE_BOOT) ? GB_BOOT_PID : GB_PID, (mode == MODE_BOOT) ? -1 : 1);
         if (!!dev && dev->open()) {
             return true;
         }
