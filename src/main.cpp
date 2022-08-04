@@ -6,72 +6,136 @@
 
 #include "flasher.h"
 #include "flashfile.h"
+#include "logger.h"
+
+int showUsage()
+{
+    std::cerr << "Usage:\n"
+        << "\tgbflasher [options] info\n"
+        << "\tgbflasher [options] flash <firmware file>\n"
+        << "\tgbflasher [options] reset\n"
+        << "\tgbflasher [options] erase\n"
+        << "[options]:\n"
+        << "-v|--verbose - Verbose logging\n"
+        << "-n|--no-reset - Don't reset after flashing\n"
+        ;
+    return -1;
+}
 
 int main(int argc, char** argv)
 {
-    if (argc < 2) {
-        std::cerr << "Usage: gbflasher <firmware file>\n";
-        return -1;
+    Logger::start();
+    std::atexit([]() {
+        Logger::stop();
+    });
+
+    bool noReset = false;
+    std::vector<std::string> cmds;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string a = argv[i];
+        if (a.empty()) {
+            continue;
+        }
+
+        if (a[0] == '-') {
+            if (a == "-v" || a == "--verbose") {
+                Logger::setVerbose(true);
+            } else if (a == "-n" || a == "--no-reset") {
+                noReset = true;
+            } else {
+                return showUsage();
+            }
+        } else {
+            cmds.push_back(a);
+        }
+    }
+
+    if (cmds.empty()) {
+        return showUsage();
     }
 
     Flasher flasher;
+    Logger::info("main") << "Switching to boot mode";
     if (!flasher.switchMode(Flasher::MODE_BOOT)) {
-        std::cerr << "Could not switch to boot mode\n";
+        Logger::error("main") << "Could not switch to boot mode";
         return -1;
     }
 
-    std::cout << "Boot device found!\n";
-
+    Logger::info("main") << "Boot mode detected";
     auto deviceInfo = flasher.deviceInfo();
     if (!deviceInfo) {
-        std::cerr << "Failed retrieving device info\n";
+        Logger::error("main") << "Failed retrieving device info";
         return -1;
     }
 
-    FlashFile flashFile(argv[1], *deviceInfo);
-    if (!flashFile) {
-        std::cerr << "Failed parsing firmware file\n";
-        return -1;
+    if (cmds.at(0) == "info") {
+        auto info = deviceInfo->memInfo();
+        Logger::info("main") << "Device memory:";
+        for (const auto& p: info) {
+            Logger::info("main") ("Type 0x%02X, address 0x%08X, length 0x%08X", p.type, p.address, p.length);
+        }
+
+        auto appInfo = flasher.appInfo();
+        if (!!appInfo) {
+            Logger::info("main") << "Device app info:" << "App version" << appInfo->appVersion() << ", Bootloader version" << appInfo->bootloaderVersion();
+        }
+    } else if (cmds.at(0) == "flash") {
+        if (cmds.size() < 2) {
+            return showUsage();
+        }
+
+        FlashFile flashFile(cmds.at(1), *deviceInfo);
+        if (!flashFile) {
+            Logger::error("main") << "Failed parsing firmware file";
+            return -1;
+        }
+
+        auto flashAppInfo = flashFile.appInfo();
+        if (!flashAppInfo) {
+            Logger::error("main") << "Missing app info in flash file";
+            return -1;
+        }
+
+        auto appInfo = flasher.appInfo();
+        if (!!appInfo) {
+            Logger::info("main") << "Device app info:" << "App version" << appInfo->appVersion() << ", Bootloader version" << appInfo->bootloaderVersion();
+        }
+
+        Logger::info("main") << "Firmware app info:" << "App version" << flashAppInfo->appVersion() << ", Bootloader version" << flashAppInfo->bootloaderVersion();
+
+        flasher.erase();
+
+        if (!flasher.flash(flashFile, *deviceInfo)) {
+            Logger::error("main") << "Failed flashing";
+            return -1;
+        }
+
+        if (!flasher.verify(flashFile, *deviceInfo)) {
+            Logger::error("main") << "Failed verifying";
+            return -1;
+        }
+
+        if (!flasher.setAppInfo(flashFile, *deviceInfo, *flashAppInfo)) {
+            Logger::error("main") << "Failed flashing app info";
+            return -1;
+        }
+
+        auto newAppInfo = flasher.appInfo();
+        if (!!newAppInfo) {
+            Logger::info("main") << "Flashed app info:" << "App version" << newAppInfo->appVersion() << ", Bootloader version" << newAppInfo->bootloaderVersion();
+        }
+
+        if (!noReset) {
+            flasher.switchMode(Flasher::MODE_REGULAR);
+        }
+    } else if (cmds.at(0) == "reset") {
+        flasher.switchMode(Flasher::MODE_REGULAR);
+    } else if (cmds.at(0) == "erase") {
+        flasher.erase();
+    } else {
+        return showUsage();
     }
 
-    auto appInfo = flasher.appInfo();
-    if (!!appInfo) {
-        std::cout << "Device App version " << appInfo->appVersion() << "\n"
-            << "Bootloader version " << appInfo->bootloaderVersion() << "\n";
-    }
-
-    auto flashAppInfo = flashFile.appInfo();
-    if (!flashAppInfo) {
-        std::cerr << "Missing app info in flash file\n";
-        return -1;
-    }
-
-    std::cout << "Firmware App version " << flashAppInfo->appVersion() << "\n"
-        << "Bootloader version " << flashAppInfo->bootloaderVersion() << "\n";
-
-    flasher.erase();
-
-    if (!flasher.flash(flashFile, *deviceInfo)) {
-        std::cerr << "Failed flashing\n";
-        return -1;
-    }
-
-    if (!flasher.verify(flashFile, *deviceInfo)) {
-        std::cerr << "Failed verifying\n";
-        return -1;
-    }
-
-    if (!flasher.setAppInfo(flashFile, *deviceInfo, *flashAppInfo)) {
-        std::cerr << "Failed flashing app info\n";
-        return -1;
-    }
-
-    auto newAppInfo = flasher.appInfo();
-    if (!!newAppInfo) {
-        std::cout << "Flashed App version " << newAppInfo->appVersion() << "\n"
-            << "Bootloader version " << newAppInfo->bootloaderVersion() << "\n";
-    }
-
-    flasher.switchMode(Flasher::MODE_REGULAR);
     return 0;
 }

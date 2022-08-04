@@ -1,11 +1,12 @@
 #include "ext/bufferstream.h"
 #include "flashfile.h"
+#include "logger.h"
 #include "utils/hex.h"
 
 std::vector<uint8_t> FlashFile::Command::encoded() const
 {
     ext::BufferStream stream;
-    stream.appendDword(addr);
+    stream.appendDword(address);
     stream.appendDword(data.size());
     stream.append(data);
     return stream.data();
@@ -31,7 +32,7 @@ FlashFile::FlashFile(std::ifstream stream, const DeviceInfo& deviceInfo)
 
         FlashFile::Command cmd({0, 0, {}, false, 0});
         auto len = lineStream.readByte();
-        cmd.addr = lineStream.bitRead(16);
+        cmd.address = lineStream.bitRead(16);
         cmd.cmd = lineStream.readByte();
         cmd.data = lineStream.readBytes(len);
         auto chk = lineStream.readByte();
@@ -58,16 +59,16 @@ FlashFile::FlashFile(std::ifstream stream, const DeviceInfo& deviceInfo)
             }
         }
 
-        cmd.addr |= baseAddr;
-        cmd.addr &= 0x1FFFFFFF;
+        cmd.address |= baseAddr;
+        cmd.address &= 0x1FFFFFFF;
 
-        auto memType = deviceInfo.memoryType(cmd.addr, cmd.data.size());
-        //printf("FlashFile cmd %02X, addr %08X, len %08X, type %d\n", cmd.cmd, cmd.addr, cmd.data.size(), memType);
+        auto memType = deviceInfo.memoryType(cmd.address, cmd.data.size());
+        Logger::verbose<FlashFile>("FlashFile")("cmd %02X, addr %08X, len %08X, type %d", cmd.cmd, cmd.address, cmd.data.size(), memType);
         if (memType == MemoryInfo::NONE) {
             return;
         }
 
-        mCommands[memType].insert({cmd.addr, cmd});
+        mCommands[memType].insert({cmd.address, cmd});
     }
 
     if (mCommands.find(MemoryInfo::APPINFO) != mCommands.end()) {

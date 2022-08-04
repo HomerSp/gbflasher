@@ -3,10 +3,11 @@
 #include <thread>
 
 #include "ext/bufferstream.h"
+#include "ext/timer.h"
 #include "flasher.h"
 #include "flashfile.h"
 #include "hid.h"
-#include "timer.h"
+#include "logger.h"
 #include "utils/hex.h"
 
 std::shared_ptr<DeviceInfo> Flasher::deviceInfo()
@@ -69,22 +70,22 @@ bool Flasher::flashMemory(const FlashFile& file, const DeviceInfo& info, MemoryI
         for (const auto& p: file.cmds(memType)) {
             const auto& f = p.second;
             if (address == 0xFFFFFFFFU) {
-                address = f.addr;
+                address = f.address;
             }
 
-            if (address != f.addr) {
+            if (address != f.address) {
                 auto ret = send(bootDev, CMD_WRITE_COMPLETE);
                 if (ret.empty()) {
-                    printf("Program complete failed!\n");
+                    Logger::error<Flasher>("flashMemory") << "Write complete failed";
                     return false;
                 }
 
-                address = f.addr;
+                address = f.address;
             }
 
             auto res = sendResult(bootDev, f.encrypted ? CMD_WRITE_CIPHERED : CMD_WRITE, f.encoded());
             if (res.result < 0) {
-                printf("Failed writing address %08X, res %d\n", f.addr, res.result);
+                Logger::error<Flasher>("flashMemory") ("Write address %08X failed - result %d", f.address, res.result);
                 return false;
             }
 
@@ -94,7 +95,7 @@ bool Flasher::flashMemory(const FlashFile& file, const DeviceInfo& info, MemoryI
         if (address != 0xFFFFFFFFU) {
             auto ret = send(bootDev, CMD_WRITE_COMPLETE);
             if (ret.empty()) {
-                printf("Program complete failed!\n");
+                Logger::error<Flasher>("flashMemory") << "Write complete failed";
                 return false;
             }
         }
@@ -138,7 +139,7 @@ bool Flasher::verifyMemory(const FlashFile& file, const DeviceInfo& info, Memory
             const auto& f = p.second;
             auto res = sendResult(bootDev, f.encrypted ? CMD_VERIFY_CIPHERED : CMD_VERIFY, f.encoded());
             if (res.result < 0) {
-                printf("Failed verifying address %08X, res %d\n", f.addr, res.result);
+                Logger::error<Flasher>("verifyMemory") ("Verify address %08X failed - result %d", f.address, res.result);
                 return false;
             }
         }
@@ -212,13 +213,13 @@ std::vector<uint8_t> Flasher::send(const std::shared_ptr<HID::Device>& dev, uint
     write.emplace_back(cmd);
     std::copy(data.begin(), data.end(), std::back_inserter(write));
     if (!dev->write(write)) {
-        printf("Flasher::send failed writing data\n");
+        Logger::verbose<Flasher>("send") << "write failed";
         return {};
     }
 
     ext::BufferStream stream(dev->read());
     if (stream.eof()) {
-        printf("Flasher::send failed reading data\n");
+        Logger::verbose<Flasher>("send") << "read failed";
         return {};
     }
 
@@ -282,7 +283,6 @@ bool Flasher::writeSegmented(const std::shared_ptr<HID::Device>& dev, uint8_t cm
     for (uint8_t i = 0; i < std::ceil(data.size() / 54.0f); ++i) {
         uint32_t start = i * 54;
         uint8_t size = std::min<uint8_t>(54, data.size() - start);
-        printf("Flasher::writeSegmented start %d, size %d\n", start, size);
 
         ext::BufferStream stream;
         stream.appendDword(address);
@@ -305,7 +305,7 @@ bool Flasher::writeSegmented(const std::shared_ptr<HID::Device>& dev, uint8_t cm
 
 bool Flasher::waitMode(uint8_t mode)
 {
-    auto timeout = Timer::sec(10);
+    auto timeout = ext::Timer::sec(10);
     do {
         // Wait for the boot device to become available
         auto dev = HID::find(GB_VID, (mode == MODE_BOOT) ? GB_BOOT_PID : GB_PID);

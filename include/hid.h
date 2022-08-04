@@ -7,7 +7,11 @@
 
 class HID {
 public:
+    static constexpr auto Tag = "HID";
+public:
     class Device {
+    public:
+        static constexpr auto Tag = "HID::Device";
     public:
         Device(std::string path);
         ~Device();

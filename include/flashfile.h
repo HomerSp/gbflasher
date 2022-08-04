@@ -9,8 +9,11 @@
 
 class FlashFile {
 public:
+    static constexpr auto Tag = "FlashFile";
+
+public:
     struct Command {
-        uint32_t addr;
+        uint32_t address;
         uint8_t cmd;
         std::vector<uint8_t> data;
         bool encrypted;

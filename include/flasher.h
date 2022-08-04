@@ -9,6 +9,9 @@
 
 class Flasher {
 public:
+    static constexpr auto Tag = "Flasher";
+
+public:
     static constexpr uint8_t MODE_REGULAR = 0;
     static constexpr uint8_t MODE_BOOT = 1;
 

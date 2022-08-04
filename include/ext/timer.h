@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdint>
 
+namespace ext {
 class Timer {
 public:
     static Timer ms(uint64_t v) { return Timer().setMs(v); }
@@ -42,3 +43,4 @@ private:
     std::chrono::milliseconds mTimeout;
     bool mWasExpired = false;
 };
+}

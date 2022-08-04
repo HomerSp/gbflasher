@@ -20,9 +20,9 @@ AppInfo::AppInfo(const std::vector<uint8_t>& data)
 
     auto numPersistBlocks = stream.readDword();
     for (uint32_t i = 0; i < numPersistBlocks; ++i) {
-        auto start = stream.readDword();
+        auto address = stream.readDword();
         auto len = stream.readDword();
-        mPersistentMemory.emplace_back(MemoryInfo::PERSISTENT, start, len);
+        mPersistentMemory.emplace_back(MemoryInfo::PERSISTENT, address, len);
     }
 }
 
@@ -48,7 +48,7 @@ std::vector<uint8_t> AppInfo::data() const
 
     stream.appendDword(mPersistentMemory.size());
     for (const auto& p: mPersistentMemory) {
-        stream.appendDword(p.start);
+        stream.appendDword(p.address);
         stream.appendDword(p.length);
     }
 

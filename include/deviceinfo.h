@@ -6,7 +6,12 @@
 class FlashFile;
 class DeviceInfo {
 public:
+    static constexpr auto Tag = "DeviceInfo";
+
+public:
     DeviceInfo(const std::vector<uint8_t>& data);
+
+    const std::vector<MemoryInfo>& memInfo() const { return mMemInfo; }
 
     uint32_t address(MemoryInfo::Type type) const;
     MemoryInfo::Type memoryType(uint32_t addr, uint32_t size) const;

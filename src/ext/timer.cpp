@@ -1,4 +1,6 @@
-#include "timer.h"
+#include "ext/timer.h"
+
+using namespace ext;
 
 Timer::Timer(bool enabled)
     : mEnabled(enabled)

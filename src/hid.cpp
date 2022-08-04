@@ -1,6 +1,7 @@
 #include <cstdio>
 
 #include "hid.h"
+#include "logger.h"
 #include "utils/hex.h"
 
 HID::Device::Device(std::string path)
@@ -14,8 +15,9 @@ HID::Device::~Device()
 
 bool HID::Device::open()
 {
-    printf("Device::open %s\n", mPath.c_str());
+    Logger::verbose<HID::Device>("open") << mPath;
     if (mDevice != nullptr) {
+        Logger::warning<HID::Device>("open") << "Already opened";
         return false;
     }
 
@@ -40,24 +42,24 @@ std::vector<uint8_t> HID::Device::read()
     std::vector<uint8_t> ret(65, 0x0U);
     auto read = hid_read_timeout(mDevice, &ret.at(0), ret.size(), 10000);
     if (read <= 0) {
-        printf("hid_read_timeout %d\n", read);
+        Logger::error<HID::Device>("read") << "error" << read;
         return {};
     }
 
     ret.resize(read);
-    //printf("HID::Device::read %s\n", utils::Hex::toString(ret).c_str());
+    Logger::verbose<HID::Device>("read") << "result" << utils::Hex::toString(ret);
     return ret;
 }
 
 bool HID::Device::write(uint8_t report, const std::vector<uint8_t>& data)
 {
     if (mDevice == nullptr) {
-        printf("Invalid device\n");
+        Logger::error<HID::Device>() << "No device opened";
         return false;
     }
 
     if (data.size() > 64) {
-        printf("Data size (%d) too big - %s\n", data.size(), utils::Hex::toString(data).c_str());
+        Logger::error<HID::Device>() << "Data size" << data.size() << "exceeds maximum packet size";
         return false;
     }
 
@@ -67,7 +69,7 @@ bool HID::Device::write(uint8_t report, const std::vector<uint8_t>& data)
         std::copy(data.begin(), data.end(), d.begin() + 1);
     }
 
-    //printf("HID::Device::write %s\n", utils::Hex::toString(d).c_str());
+    Logger::verbose<HID>("write") << utils::Hex::toString(d);
     return hid_write(mDevice, d.data(), d.size()) == d.size();
 }
 
@@ -78,7 +80,7 @@ std::shared_ptr<HID::Device> HID::find(uint16_t vid, uint16_t pid, int interface
 
     std::string path;
     while (cur_dev != nullptr) {
-        printf("HID::find %04X %04X %d %s\n", cur_dev->vendor_id, cur_dev->product_id, cur_dev->interface_number, cur_dev->path);
+        Logger::verbose<HID>("find") ("%04X %04X %d %s", cur_dev->vendor_id, cur_dev->product_id, cur_dev->interface_number, cur_dev->path);
         if (cur_dev->vendor_id == vid && cur_dev->product_id == pid && (interfaceNum == -1 || cur_dev->interface_number == interfaceNum)) {
             path = cur_dev->path;
             break;
