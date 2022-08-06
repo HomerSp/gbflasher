@@ -35,6 +35,9 @@ public:
     bool switchMode(uint8_t mode);
 
     std::vector<uint8_t> readData(uint32_t address, uint32_t size);
+    bool writeData(uint32_t address, const std::vector<uint8_t>& data, bool encrypted = false);
+
+    bool decode(const FlashFile& file);
 
 private:
     bool flashMemory(const FlashFile& file, const DeviceInfo& info, MemoryInfo::Type memType);
@@ -62,6 +65,7 @@ private:
     static constexpr uint8_t CMD_ERASE = 0x04U;
     static constexpr uint8_t CMD_WRITE = 0x05U;
     static constexpr uint8_t CMD_WRITE_COMPLETE = 0x06U;
+    static constexpr uint8_t CMD_GET_DATA = 0x07U;
     static constexpr uint8_t CMD_RESET = 0x08U;
     static constexpr uint8_t CMD_SIGN = 0x09U;
     static constexpr uint8_t CMD_WRITE_CIPHERED = 0x0EU;

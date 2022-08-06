@@ -94,6 +94,17 @@ FlashFile::FlashFile(std::ifstream stream, const DeviceInfo& deviceInfo)
     mValid = !!mAppInfo && !mCommands.empty();
 }
 
+uint8_t FlashFile::calculateChecksum(const std::vector<uint8_t>& data, uint32_t size)
+{
+    uint8_t calculated = 0;
+    for (uint32_t i = 0; i < (size > 0 ? size : data.size()); ++i) {
+        calculated += data.at(i);
+    }
+
+    calculated = (~calculated + 1) & 0xFFU;
+    return calculated;
+}
+
 bool FlashFile::verifyChecksum(const std::vector<uint8_t>& data) const
 {
     if (data.size() < 2) {
@@ -101,14 +112,9 @@ bool FlashFile::verifyChecksum(const std::vector<uint8_t>& data) const
     }
 
     auto found = data.at(data.size() - 1);
-    uint8_t calculated = 0;
-    for (uint32_t i = 0; i < data.size() - 1; ++i) {
-        calculated += data.at(i);
-    }
-
-    calculated = (~calculated + 1) & 0xFFU;
+    auto calculated = calculateChecksum(data, data.size() - 1);
     if (calculated != found) {
-        Logger::error<FlashFile>("verifyChecksum") ("failed (calculated %02X, vs expected %02X)", calculated, found);
+        Logger::error<FlashFile>("verifyChecksum") ("failed (calculated %02X, vs found %02X)", calculated, found);
         return false;
     }
 

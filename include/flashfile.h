@@ -37,6 +37,8 @@ public:
 
     operator bool() const { return mValid; }
 
+    static uint8_t calculateChecksum(const std::vector<uint8_t>& data, uint32_t size = 0);
+
 protected:
     bool verifyChecksum(const std::vector<uint8_t>& data) const;
 

@@ -199,6 +199,8 @@ std::vector<uint8_t> Flasher::readData(uint32_t address, uint32_t size)
 
                 auto res = sendResult(bootDev, CMD_VERIFY, stream.data());
                 if (res.result >= 0) {
+                    printf("%02X", i);
+                    fflush(stdout);
                     ret.emplace_back(i);
                     break;
                 }
@@ -209,6 +211,61 @@ std::vector<uint8_t> Flasher::readData(uint32_t address, uint32_t size)
     }
 
     return {};
+}
+
+bool Flasher::writeData(uint32_t address, const std::vector<uint8_t>& data, bool encrypted)
+{
+    auto bootDev = HID::find(GB_VID, GB_BOOT_PID);
+    if (!!bootDev && bootDev->open()) {
+        ext::BufferStream stream;
+        stream.appendDword(address);
+        stream.appendDword(data.size());
+        stream.append(data);
+
+        auto res = sendResult(bootDev, encrypted ? CMD_WRITE_CIPHERED : CMD_WRITE, stream.data());
+        if (res.result < 0) {
+            Logger::error<Flasher>("writeData") ("Write address %08X failed - result %d", address, res.result);
+            return false;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool Flasher::decode(const FlashFile& file)
+{
+    auto bootDev = HID::find(GB_VID, GB_BOOT_PID);
+    if (!!bootDev && bootDev->open()) {
+        for (const auto& c: file.cmds(MemoryInfo::APPLICATION)) {
+            const auto& p = c.second;
+            if (!p.encrypted) {
+                continue;
+            }
+
+            auto d = readData(p.address, p.length());
+            if (d.empty()) {
+                Logger::error<Flasher>("decode") ("Failed reading address %08X", p.address);
+                return false;
+            }
+
+            ext::BufferStream stream;
+            stream.append(static_cast<uint8_t>(p.length()));
+            stream.append(static_cast<uint8_t>((p.address >> 8) & 0xFFU));
+            stream.append(static_cast<uint8_t>((p.address) & 0xFFU));
+            stream.append(static_cast<uint8_t>(0x00U));
+            stream.append(d);
+            auto check = FlashFile::calculateChecksum(stream.data());
+            stream.append(check);
+
+            std::cout << ":" << utils::Hex::toString(stream.data()) << "\n";
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 std::vector<uint8_t> Flasher::send(const std::shared_ptr<HID::Device>& dev, uint8_t cmd, std::vector<uint8_t> data)
